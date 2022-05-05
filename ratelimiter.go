@@ -93,7 +93,7 @@ func (r *RateLimiter) Allowed(user int) bool {
 	// bucket expired
 	if v.expired() {
 		// renew tokens, allow but deduct one
-		v.remaining = v.allowance
+		v.remaining = v.allowance - 1
 		return true
 	}
 
