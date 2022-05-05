@@ -17,7 +17,7 @@ func Test_RateLimiter(t *testing.T) {
 	t.Run("Per User", func(t *testing.T) {
 		uid := 2
 		r := ratelimiter.NewWithDefault()
-		r.SetUserLimit(uid, 10, ratelimiter.INTERVAL)
+		r.SetUserLimit(uid, 1, ratelimiter.INTERVAL)
 		do(r, uid)
 	})
 
@@ -28,8 +28,8 @@ type Limiter interface {
 }
 
 func do(r Limiter, id int) {
-	for i := 1; i <= 20; i++ {
-		n := 50
+	for i := 1; i <= 10; i++ {
+		n := 100
 		time.Sleep(time.Duration(n) * time.Millisecond)
 
 		if r.Allowed(id) {

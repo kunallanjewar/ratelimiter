@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	// MAX_Tokens is a value for maximum tokens allowed to be
+	// TOKENS is a value for maximum tokens allowed to be
 	// refilled after an interval.
-	TOKENS = 10
+	TOKENS = 2
 
-	// MAX_Interval is a default value of interval after which
+	// INTERVAL is a default value of interval after which
 	// bucket tokens are refilled.
 	INTERVAL = time.Second
 )
