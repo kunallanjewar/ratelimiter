@@ -17,17 +17,17 @@ func Test_RateLimiter(t *testing.T) {
 	t.Run("Per User", func(t *testing.T) {
 		uid := 2
 		r := ratelimiter.NewWithDefault()
-		r.SetUserLimit(uid, 10)
+		r.SetUserLimit(uid, 10, ratelimiter.INTERVAL)
 		do(r, uid)
 	})
 
 }
 
-type Allower interface {
+type Limiter interface {
 	Allowed(int) bool
 }
 
-func do(r Allower, id int) {
+func do(r Limiter, id int) {
 	for i := 1; i <= 20; i++ {
 		n := 50
 		time.Sleep(time.Duration(n) * time.Millisecond)

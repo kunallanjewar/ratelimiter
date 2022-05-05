@@ -2,8 +2,8 @@
 --
     import "github.com/kunallanjewar/ratelimiter"
 
-package ratelimiter is a rudimentary implementation of token bucket policy to
-apply rate-limit on per user basis.
+ratelimiter is a rudimentary implementation of limiting based on token bucket
+policy.
 
 NOTE: This package is not thread-safe.
 
@@ -13,11 +13,11 @@ NOTE: This package is not thread-safe.
 const (
 	// MAX_Tokens is a value for maximum tokens allowed to be
 	// refilled after an interval.
-	MAX_Tokens = 10
+	TOKENS = 10
 
 	// MAX_Interval is a default value of interval after which
 	// bucket tokens are refilled.
-	MAX_Interval = time.Second
+	INTERVAL = time.Second
 )
 ```
 
@@ -33,17 +33,23 @@ Ratelimiter implements a token bucket based rate limiter.
 #### func  New
 
 ```go
-func New(tokens int, duration time.Duration) *RateLimiter
+func New(tokens int, interval time.Duration) *RateLimiter
 ```
-New create an instance of RateLimiter.
+New creates an instance of a Global RateLimiter. Global tokens are refilled
+after given interval.
+
+These values are applied globally and can be overridden per user with
+SetUserLimit().
 
 #### func  NewWithDefault
 
 ```go
 func NewWithDefault() *RateLimiter
 ```
-NewWithDefault return an instance of RateLimiter with default values. These
-values are applied globally and can be overridden per user with SetUserLimit().
+NewWithDefault return an instance of RateLimiter with default values.
+
+These values are applied globally and can be overridden per user with
+SetUserLimit().
 
 #### func (*RateLimiter) Allowed
 
@@ -56,6 +62,8 @@ Returns false if token policy is violated.
 #### func (*RateLimiter) SetUserLimit
 
 ```go
-func (r *RateLimiter) SetUserLimit(id, allowance int)
+func (r *RateLimiter) SetUserLimit(
+	id, tokens int,
+	interval time.Duration)
 ```
-SetUserLimit overrides the global request for a specific user.
+SetUserLimit overrides the global bucket limit for a specific user.

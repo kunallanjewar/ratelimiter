@@ -1,5 +1,5 @@
-// package ratelimiter is a rudimentary implementation of
-// token bucket policy to apply rate-limit on per user basis.
+// ratelimiter is a rudimentary implementation of
+// limiting based on token bucket policy.
 //
 // NOTE: This package is not thread-safe.
 package ratelimiter

@@ -7,11 +7,11 @@ import (
 const (
 	// MAX_Tokens is a value for maximum tokens allowed to be
 	// refilled after an interval.
-	MAX_Tokens = 10
+	TOKENS = 10
 
 	// MAX_Interval is a default value of interval after which
 	// bucket tokens are refilled.
-	MAX_Interval = time.Second
+	INTERVAL = time.Second
 )
 
 type bucket struct {
@@ -20,73 +20,89 @@ type bucket struct {
 	//
 	// we would delete bucket that is inactive for a while.
 	start, end time.Time
-	interval   time.Duration
 	allowance  int
-	tokens     int
+
+	// remaining tokens
+	remaining int
 }
 
 func (f *bucket) expired() bool {
-	return f.end.Before(time.Now())
+	return f.end.Before(time.Now().UTC())
 }
 
-// Ratelimiter implements a token bucket based rate limiter.
+// Ratelimiter implements a token
+// bucket based rate limiter.
 type RateLimiter struct {
-	bucket map[int]*bucket
-	dtok   int
+	buckets map[int]*bucket
+	// defaults
+	dtok      int
+	dinterval time.Duration
 }
 
-// New create an instance of RateLimiter.
-func New(tokens int, duration time.Duration) *RateLimiter {
+// New creates an instance of a Global RateLimiter.
+// Global tokens are refilled after given interval.
+//
+// These values are applied globally and can
+// be overridden per user with SetUserLimit().
+func New(tokens int, interval time.Duration) *RateLimiter {
 	return &RateLimiter{
-		dtok:   tokens,
-		bucket: make(map[int]*bucket),
+		dtok:      tokens,
+		dinterval: interval,
+		buckets:   make(map[int]*bucket),
 	}
 }
 
 // NewWithDefault return an instance of RateLimiter with default values.
-// These values are applied globally and can be overridden per user with SetUserLimit().
+//
+// These values are applied globally and can be overridden per user
+// with SetUserLimit().
 func NewWithDefault() *RateLimiter {
-	return New(MAX_Tokens, MAX_Interval)
+	return New(TOKENS, INTERVAL)
 }
 
-// SetUserLimit overrides the global request for a specific user.
-func (r *RateLimiter) SetUserLimit(id, allowance int) {
+// SetUserLimit overrides the global bucket
+// limit for a specific user.
+func (r *RateLimiter) SetUserLimit(
+	id, tokens int,
+	interval time.Duration) {
+
 	b := &bucket{
-		start:     time.Now(),
-		end:       time.Now().Add(time.Second),
-		interval:  time.Second,
-		allowance: allowance,
-		tokens:    allowance,
+		start:     time.Now().UTC(),
+		end:       time.Now().UTC().Add(interval),
+		allowance: tokens,
+		remaining: tokens,
 	}
 
-	r.bucket[id] = b
+	r.buckets[id] = b
 }
 
-// Allowed returns whether or not the request is allowed to be processed further.
+// Allowed returns whether or not the request is
+// allowed to be processed further.
 // Returns false if token policy is violated.
 func (r *RateLimiter) Allowed(user int) bool {
 	// grab bucket for this user
-	v, ok := r.bucket[user]
+	v, ok := r.buckets[user]
 	if !ok {
-		// apply global limit, create new bucket but deduct one token
+		// apply global limit,
+		// create new bucket but deduct one token.
 		// allowance here would be default tokens.
-		r.SetUserLimit(user, r.dtok-1)
+		r.SetUserLimit(user, r.dtok-1, r.dinterval)
 		return true
 	}
 
 	// bucket expired
 	if v.expired() {
 		// renew tokens, allow but deduct one
-		v.tokens = v.allowance
+		v.remaining = v.allowance
 		return true
 	}
 
-	if v.tokens > 0 {
+	if v.remaining > 0 {
 		// we have tokens left
-		v.tokens--
+		v.remaining--
 		return true
 	}
 
-	// exceeded token limit within window
+	// token policy violation
 	return false
 }
